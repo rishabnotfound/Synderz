@@ -3,6 +3,6 @@
     <style name="Theme.Synderz" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/bg</item>
     </style>
-    <color name="bg">#0A0E13</color>
+    <color name="bg">#000000</color>
     <color name="icon_bg">#000000</color> <!-- matches the logo artwork -->
 </resources>

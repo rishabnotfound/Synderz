@@ -1,5 +1,6 @@
 package com.rishabnotfound.synderz
 
+import com.rishabnotfound.synderz.ui.LocalCalm
 import com.rishabnotfound.synderz.ui.LocalClock24
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -175,9 +176,22 @@ private fun App(vm: AppVM) {
             }
         }
     }
+    // Battery: in the dashboard ask for the panel's slowest refresh rate and (optionally) dim it.
+    DisposableEffect(full, d.settings.dimDashboard) {
+        val w = (view.context as Activity).window
+        val before = w.attributes.let { it.preferredDisplayModeId to it.screenBrightness }
+        if (full) w.attributes = w.attributes.apply {
+            val cur = w.decorView.display?.mode
+            w.decorView.display?.supportedModes
+                ?.filter { cur == null || (it.physicalWidth == cur.physicalWidth && it.physicalHeight == cur.physicalHeight) }
+                ?.minByOrNull { it.refreshRate }?.let { preferredDisplayModeId = it.modeId }
+            if (d.settings.dimDashboard) screenBrightness = .2f
+        }
+        onDispose { w.attributes = w.attributes.apply { preferredDisplayModeId = before.first; screenBrightness = before.second } }
+    }
 
     val ctx = LocalContext.current
-    CompositionLocalProvider(LocalClock24 provides (d.settings.clock24 ?: android.text.format.DateFormat.is24HourFormat(ctx))) {
+    CompositionLocalProvider(LocalClock24 provides (d.settings.clock24 ?: android.text.format.DateFormat.is24HourFormat(ctx)), LocalCalm provides full) {
     BoxWithConstraints(Modifier.fillMaxSize().background(C.Bg)) {
         // Orientation from the screen, not from our constraints: the keyboard shrinks constraints, and flipping
         // layouts while it opens would rebuild the focused field and close it again.
@@ -218,7 +232,12 @@ private fun App(vm: AppVM) {
                 }
             },
         ) { pad ->
-            val m = Modifier.padding(pad).consumeWindowInsets(pad).imePadding()
+            // AMOLED burn-in guard: the static dashboard drifts a few px each minute
+            var shift by remember { mutableIntStateOf(0) }
+            if (full) LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(60_000); shift = (shift + 1) % 8 } }
+            val dx = if (full) listOf(0, 2, 4, 2, 0, -2, -4, -2)[shift] else 0
+            val dy = if (full) listOf(0, -2, 0, 2, 4, 2, 0, -2)[shift] else 0
+            val m = Modifier.padding(pad).consumeWindowInsets(pad).imePadding().offset(dx.dp, dy.dp)
             if (wide && showChrome) Row(m) {
                 AnimatedVisibility(!ime, enter = expandHorizontally(), exit = shrinkHorizontally()) {
                     Rail(vm, d, screen, monitoring, { screen = it }) { settings = true }

@@ -459,3 +459,28 @@ fun rememberClock(seconds: Boolean = true): java.text.SimpleDateFormat {
         java.text.SimpleDateFormat(if (h24) (if (seconds) "HH:mm:ss" else "HH:mm") else (if (seconds) "h:mm:ss a" else "h:mm a"), java.util.Locale.getDefault())
     }
 }
+
+/** True while the locked dashboard is up: endless animations stop so the screen only redraws when data changes. */
+val LocalCalm = staticCompositionLocalOf { false }
+
+class Battery(val pct: Int, val charging: Boolean)
+
+/** Live battery level from the sticky ACTION_BATTERY_CHANGED broadcast; updates only when the level changes. */
+@Composable
+fun rememberBattery(): Battery? {
+    val ctx = LocalContext.current
+    var b by remember { mutableStateOf<Battery?>(null) }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        val rx = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: android.content.Context, i: android.content.Intent) {
+                val level = i.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)
+                val scale = i.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, 100)
+                val status = i.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1)
+                if (level >= 0) b = Battery(level * 100 / scale, status == android.os.BatteryManager.BATTERY_STATUS_CHARGING || status == android.os.BatteryManager.BATTERY_STATUS_FULL)
+            }
+        }
+        ctx.registerReceiver(rx, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))?.let { rx.onReceive(ctx, it) }
+        onDispose { ctx.unregisterReceiver(rx) }
+    }
+    return b
+}

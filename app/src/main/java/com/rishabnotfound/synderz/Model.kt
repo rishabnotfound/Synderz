@@ -109,6 +109,7 @@ data class Settings(
     val verifySsl: Boolean = true,
     val saveHistory: Boolean = true,
     val clock24: Boolean? = null, // null = follow the phone's 12/24-hour setting
+    val dimDashboard: Boolean = true, // lower brightness while the locked dashboard is up
 )
 
 @Serializable

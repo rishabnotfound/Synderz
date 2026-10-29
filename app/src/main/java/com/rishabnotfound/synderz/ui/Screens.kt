@@ -402,6 +402,7 @@ fun SettingsDialog(vm: AppVM, d: AppData, onDismiss: () -> Unit) {
                 Toggle("Follow redirects", "Automatically follow 3xx responses", s.followRedirects) { v -> set { it.copy(followRedirects = v) } }
                 Toggle("SSL certificate verification", "Turn off only for self-signed dev servers", s.verifySsl) { v -> set { it.copy(verifySsl = v) } }
                 Toggle("Save history", "Keep the last 300 sent requests", s.saveHistory) { v -> set { it.copy(saveHistory = v) } }
+                Toggle("Dim locked dashboard", "Saves battery while it sits on a desk", s.dimDashboard) { v -> set { it.copy(dimDashboard = v) } }
                 Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Clock", color = C.Text, fontSize = 14.sp)

@@ -1,5 +1,10 @@
 package com.rishabnotfound.synderz.ui
 
+import androidx.compose.material.icons.rounded.BatteryStd
+import androidx.compose.material.icons.rounded.BatteryAlert
+import androidx.compose.material.icons.rounded.BatteryChargingFull
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.State
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -270,6 +275,19 @@ private fun FreshDialog(rows: List<AppVM.Fresh>, now: Long, onAgain: () -> Unit,
     }
 }
 
+@Composable
+private fun BatteryChip() {
+    val b = rememberBattery() ?: return
+    val low = b.pct <= 15 && !b.charging
+    Row(Modifier.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            if (b.charging) Icons.Rounded.BatteryChargingFull else if (low) Icons.Rounded.BatteryAlert else Icons.Rounded.BatteryStd,
+            if (b.charging) "Charging" else "Battery", tint = if (low) C.Red else if (b.charging) C.Green else C.Muted, modifier = Modifier.size(18.dp),
+        )
+        Text("${b.pct}%", color = if (low) C.Red else C.Text, fontSize = 13.sp, fontFamily = Mono, fontWeight = FontWeight.Medium)
+    }
+}
+
 /** Fleet summary in one line: clock, how many are up, typical latency, uptime. */
 @Composable
 private fun GlanceBar(vm: AppVM, d: AppData, now: Long, locked: Boolean, onFullscreen: (Boolean) -> Unit, add: () -> Unit, pages: Int, page: Int, onPage: (Int) -> Unit) {
@@ -308,6 +326,7 @@ private fun GlanceBar(vm: AppVM, d: AppData, now: Long, locked: Boolean, onFulls
         }
         if (locked) {
             if (d.monitors.isNotEmpty()) IconBtn(Icons.Rounded.NetworkCheck, "Check all now, bypassing caches", tint = C.Blue) { vm.checkNow() }
+            BatteryChip()
             IconBtn(Icons.Rounded.Lock, "Unlock to exit dashboard", tint = C.Muted) { onFullscreen(false) }
         } else {
             if (d.monitors.isNotEmpty()) {
@@ -429,6 +448,10 @@ private fun AddTile(modifier: Modifier, onClick: () -> Unit) = Box(
 
 @Composable
 private fun LiveDot(on: Boolean, color: Color, solid: Boolean = false) {
+    if (LocalCalm.current) { // dashboard: a steady dot, no per-frame redraws
+        Box(Modifier.size(16.dp), Alignment.Center) { Box(Modifier.size(7.dp).clip(CircleShape).background(if (on || solid) color else C.Faint)) }
+        return
+    }
     val pulse = rememberInfiniteTransition(label = "pulse")
     val s by pulse.animateFloat(1f, 2.6f, infiniteRepeatable(tween(1500), RepeatMode.Restart), label = "ring")
     val a by pulse.animateFloat(.55f, 0f, infiniteRepeatable(tween(1500), RepeatMode.Restart), label = "ringa")
@@ -448,7 +471,10 @@ private fun Tile(vm: AppVM, m: Monitor, samples: List<Sample>, live: Boolean, no
     val last = samples.lastOrNull()
     val state = stateColor(last)
     val down = last != null && !last.up
-    val pulse = rememberInfiniteTransition(label = "alarm").animateFloat(.3f, 1f, infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "alarma")
+    // only a down tile pulses, and never in the calm dashboard: an endless animation redraws the screen every frame
+    val pulse: State<Float> = if (down && !LocalCalm.current) rememberInfiniteTransition(label = "alarm")
+        .animateFloat(.3f, 1f, infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "alarma")
+    else remember { mutableFloatStateOf(1f) }
     val glow by animateColorAsState(if (!live || last == null) Color.Transparent else state, tween(600), label = "glow")
     val shape = RoundedCornerShape(18.dp)
     val edge = if (down) SolidColor(C.Red.copy(alpha = .35f + .45f * pulse.value)) else C.Edge

@@ -32,11 +32,12 @@ import androidx.compose.ui.unit.dp
 import com.rishabnotfound.synderz.R
 
 object C {
-    val Bg = Color(0xFF090B0F)
-    val Surface = Color(0xFF0F1318)
-    val Surface2 = Color(0xFF151A21)
-    val Surface3 = Color(0xFF1C232C)
-    val Line = Color(0xFF222A35)
+    // True AMOLED: the canvas is pure black (pixels off); cards sit just above it so they still read as layers.
+    val Bg = Color(0xFF000000)
+    val Surface = Color(0xFF0A0C0F)
+    val Surface2 = Color(0xFF111418)
+    val Surface3 = Color(0xFF181C22)
+    val Line = Color(0xFF1C2229)
     val Text = Color(0xFFE8EDF2)
     val Muted = Color(0xFF8A96A6)
     val Faint = Color(0xFF525D6B)
