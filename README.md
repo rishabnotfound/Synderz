@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo.png" width="96" alt="Synderz logo" />
+  <img src="docs/nobg.png" width="96" alt="Synderz logo" />
 </p>
 
 <h1 align="center">Synderz</h1>
